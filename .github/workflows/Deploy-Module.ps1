@@ -5,15 +5,12 @@ $moduleVersion = ($env:RELEASE_VERSION) -replace "v",""
 Write-Host "ModuleVersion: $moduleVersion"
 
 $manifestPath = Resolve-Path -Path "*\CommonvSphereTasks.psd1"
-#Write-Host "Manifest Path: $manifestPath"
 
 Update-ModuleManifest -ReleaseNotes $releaseNotes -Path $manifestPath.Path -ModuleVersion $moduleVersion #-Verbose
 
 $moduleFilePath = Resolve-Path -Path "*\CommonvSphereTasks.psm1"
-#Write-Host "Module File Path: $moduleFilePath"
 
 $modulePath = Split-Path -Parent $moduleFilePath
-#Write-Host "Module Path: $modulePath"
 
 $nuGetApiKey = $env:PSGALLERY_TOKEN
 
