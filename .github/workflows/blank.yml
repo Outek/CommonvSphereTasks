@@ -1,17 +1,33 @@
 name: CI
 
-on: [push]
-
+on: 
+  release:
+    types: published
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-    
+  CommonvSphereTasks-module-1:
+    name: CommonvSphereTasks Module Tests
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [windows-2019]
     steps:
     - uses: actions/checkout@v1
-    - name: Run a one-line script
-      run: echo Hello, world!
-    - name: Run a multi-line script
-      run: |
-        echo Add other actions to build,
-        echo test, and deploy your project.
+    - name: Install Pester Module
+      run: .\.github\workflows\Install-PesterModule.ps1
+      shell: pwsh
+    - name: Run Pester Tests
+      run: .\.github\workflows\Invoke-PesterTests.ps1
+      shell: pwsh
+  CommonvSphereTasks-module-2:
+    needs: CommonvSphereTasks-module-1
+    name: CommonvSphereTasks Module Deployment
+    runs-on: windows-2019
+    steps:
+    - uses: actions/checkout@v1
+    - name: Deploy to PSGallery
+      env:
+        PSGALLERY_TOKEN: ${{secrets.PSGALLERY_TOKEN}}
+        RELEASE_NOTES: ${{github.event.release.body}}
+        RELEASE_VERSION: ${{github.event.release.tag_name}}
+      run: .github\workflows\Deploy-Module.ps1
+      shell: pwsh
