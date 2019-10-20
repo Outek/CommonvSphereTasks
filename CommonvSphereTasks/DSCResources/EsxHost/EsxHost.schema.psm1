@@ -1,6 +1,5 @@
-Configuration EsxHost
-{
-    param(
+Configuration EsxHost {
+    param (
         [Parameter(Mandatory)]
         [System.String]
         $Name,
@@ -9,31 +8,52 @@ Configuration EsxHost
         [System.String]
         $Server,
 
-        [hashtable[]]
-        $NtpServers
+        [System.String]
+        $NtpServers,
+
+        [System.String]
+        $Syslog_Server
     )
 
     Import-DscResource -ModuleName VMware.vSphereDSC
     Import-DscResource -ModuleName PSDesiredStateConfiguration
 
-    $Credentials = New-Object pscredential('Domain\Domainaccount', ("mysecurepassword" | ConvertTo-SecureString -AsPlainText -Force))
-    
-    foreach ($NtpServer in $NtpServers) {
-        VMHostNtpSettings "MyVMHostNtpSetting" {
+    $Credential = New-Object pscredential('Domain\Domainaccount', ("mysecurepassword" | ConvertTo-SecureString -AsPlainText -Force))
+
+    if ($NtpServers) {
+        VMHostNtpSettings "VMHostNtpSettings_$($Name)" {
             Name             = $Name
             Server           = $Server
             Credential       = $Credentials
-            NtpServer        = @($NtpServer.NtpServer)
+            NtpServer        = $NtpServers
             NtpServicePolicy = 'automatic'
         }
     }
 
-    VMHostService "MyVMHostService_NTP" {
+    VMHostService "VMHostService_$($Name)" {
         Name       = $Name
         Server     = $Server
-        Credential = $Credentials
+        Credential = $Credential
         Key        = 'ntpd'
         Policy     = 'On'
         Running    = $true
+    }
+
+    if ($Syslog_Server) {
+        VMHostSyslog "VMHostSyslog_$($Name)" {
+            Name = $Name
+            Server = $Server
+            Credential = $Credential
+            Loghost = $Syslog_Server
+            CheckSslCerts = $true
+            DefaultRotate = 10
+            DefaultRotateSize = 100
+            DefaultTimeout = 180
+            Logdir = '/scratch/log'
+            LogdirUnique = $false
+            DropLogRotate = 8
+            DropLogSize = 50
+            QueueDropMark = 90
+        }
     }
 }
