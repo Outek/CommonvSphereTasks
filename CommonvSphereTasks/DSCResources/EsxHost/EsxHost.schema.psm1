@@ -10,7 +10,13 @@ Configuration EsxHost
         $Server,
 
         [System.String]
-        $NtpServers
+        $NtpServers,
+
+        [System.String]
+        $SyslogServer,
+
+        [Hashtable]
+        $DNSServerConfigs
     )
 
     Import-DscResource -ModuleName VMware.vSphereDSC
@@ -34,6 +40,37 @@ Configuration EsxHost
             Key        = 'ntpd'
             Policy     = 'On'
             Running    = $true
+        }
+    }
+
+    if ($SyslogServer) {
+        VMHostSyslog "VMHostSyslog_$($Name)" {
+            Name           = $Name
+            Server         = $Server
+            Credential     = $Credential
+            Loghost        = $SyslogServer
+            CheckSslCerts  = $true
+            DefaultRotate  = 10
+            DefaultSize    = 100
+            DefaultTimeout = 180
+            Logdir         = '/scratch/log'
+            LogdirUnique   = $false
+            DropLogRotate  = 8
+            DropLogSize    = 50
+            QueueDropMark  = 90
+        }
+    }
+
+    if ($DNSServerConfigs) {
+        VMHostDnsSettings "VMHostDnsSettings_$($Name)" {
+            Name         = $Name
+            Server       = $Server
+            Credential   = $Credential
+            Dhcp         = $false
+            DomainName   = $DNSServerConfigs.DomainName
+            HostName     = $Name
+            Address      = $DNSServerConfigs.Address
+            SearchDomain = $DNSServerConfigs.SearchDomain
         }
     }
 }
